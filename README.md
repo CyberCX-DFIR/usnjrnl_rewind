@@ -1,6 +1,6 @@
 # Usnjrnl Rewind / USN full path builder
 
-For an explanation of Usnjrnl Rewind, read the blog post [here](about:blank).
+For an explanation of Usnjrnl Rewind, read the blog post [here](https://cybercx.com.au/blog/nfts-usnjrnl-rewind/)).
 
 This script will process the outputs of Eric Zimmerman's MFTEcmd tool and produce a csv that has the complete and correct path for every file and folder (no more Unknowns). 
 
