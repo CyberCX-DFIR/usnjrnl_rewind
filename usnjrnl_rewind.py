@@ -95,7 +95,7 @@ def get_full_path(entry, lookup_dict, path):
         else:
             parent_path = get_full_path(parent_entry, lookup_dict, parent_name)
     if path:
-        return parent_path + '\\' + path
+        return str(parent_path) + '\\' + str(path)
     return parent_path
 
 def create_journal_rewind_csv(sqlite_db_path, out_csv_path, mft_table_name, usn_table_name):
