@@ -20,10 +20,48 @@ import random
 import sqlite3
 import time
 
-version = 0.4
+version = 0.6
 
 from csv_to_sqlite import import_csv, sanitize_remove_nulls
+from enum import IntFlag
 from string import ascii_uppercase
+
+class Reason(IntFlag):
+    DataOverwrite       = 0x00000001
+    DataExtend          = 0x00000002
+    DataTruncation      = 0x00000004
+    UNK_0x8             = 0x00000008
+    NamedDataOverwrite  = 0x00000010
+    NamedDataExtend     = 0x00000020
+    NamedDataTruncation = 0x00000040
+    UNK_0x80            = 0x00000080
+    FileCreate          = 0x00000100
+    FileDelete          = 0x00000200
+    EaChange            = 0x00000400
+    SecurityChange      = 0x00000800
+    RenameOldName       = 0x00001000
+    RenameNewName       = 0x00002000
+    IndexableChange     = 0x00004000
+    BasicInfoChange     = 0x00008000
+    HardLinkChange      = 0x00010000
+    CompressionChange   = 0x00020000
+    EncryptionChange    = 0x00040000
+    ObjectIdChange      = 0x00080000
+    ReparsePointChange  = 0x00100000
+    StreamChange        = 0x00200000
+    TransactedChange    = 0x00400000
+    IntegrityChange     = 0x00800000
+    UNK_0x1000000       = 0x01000000
+    UNK_0x2000000       = 0x02000000
+    UNK_0x4000000       = 0x04000000
+    UNK_0x8000000       = 0x08000000
+    UNK_0x10000000      = 0x10000000
+    UNK_0x20000000      = 0x20000000
+    UNK_0x40000000      = 0x40000000
+    Close               = 0x80000000
+    
+    def __repr__(self):
+        return '|'.join(val.name for val in Reason if self.value & val)
 
 def get_time_taken_string(start_time, end_time):
     time_taken = end_time - start_time
@@ -95,8 +133,25 @@ def get_full_path(entry, lookup_dict, path):
         else:
             parent_path = get_full_path(parent_entry, lookup_dict, parent_name)
     if path:
+        # If parent is number, python may treat as int, not str, hence explicit 
+        # conversion to string below
         return str(parent_path) + '\\' + str(path)
     return parent_path
+
+def clean_reasons_string(reasons):
+    '''
+        This functions checks if 'reasons' is an integer, if so
+        it will convert it to the flags equivalent string.
+        This happens when MFtEcmd encounters unknown flags and 
+        returns the reasons integer value as is. 
+    '''
+    try:
+        i = int(reasons)
+        reasons = repr(Reason(i))
+    except ValueError:
+        # Reasons is not an int
+        pass
+    return reasons
 
 def create_journal_rewind_csv(sqlite_db_path, out_csv_path, mft_table_name, usn_table_name):
     
@@ -215,6 +270,8 @@ def create_journal_rewind_csv(sqlite_db_path, out_csv_path, mft_table_name, usn_
             entry = result['Entry']
             parent_entry = result['ParentEntry']
             path_changed = False
+
+            reasons = clean_reasons_string(reasons)
 
             if "RenameOldName" in reasons:
                 # Replace entry in lookup dict, need parent name for this
