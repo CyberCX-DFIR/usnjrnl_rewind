@@ -128,12 +128,16 @@ def get_full_path(entry, lookup_dict, path):
     parent_path = "<UNKNOWN>"
     if entry in lookup_dict:
         file_name, parent_entry, parent_name = lookup_dict[entry]
+        # Use the current name from the dict rather than the caller's
+        # cached copy, which may be stale after rename events update
+        # parent_lookup during the reverse-chronological walk.
+        path = file_name
         if parent_entry == "5-5":
             parent_path = "."
         else:
             parent_path = get_full_path(parent_entry, lookup_dict, parent_name)
     if path:
-        # If parent is number, python may treat as int, not str, hence explicit 
+        # If parent is number, python may treat as int, not str, hence explicit
         # conversion to string below
         return str(parent_path) + '\\' + str(path)
     return parent_path
@@ -217,6 +221,10 @@ def create_journal_rewind_csv(sqlite_db_path, out_csv_path, mft_table_name, usn_
     parent_lookup = {} # { Entry : (EntryName, ParentEntry, ParentName), .. }
 
     for result in results:
+        # Skip ADS entries — their names contain ':' (e.g. "$UpCase:$Info")
+        # and would overwrite the real filename for the same Entry key.
+        if ':' in result['FileName']:
+            continue
         parent_lookup[result['Entry']] = (result['FileName'], result['ParentEntry'], result['ParentName'])
 
     query = '''
