@@ -20,7 +20,7 @@ import random
 import sqlite3
 import time
 
-version = 0.6.1
+version = "0.6.1"
 
 from csv_to_sqlite import import_csv, sanitize_remove_nulls
 from enum import IntFlag
